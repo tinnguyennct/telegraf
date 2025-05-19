@@ -218,3 +218,76 @@ tput sgr0
 echo "Telegraf has been installed successfully."
 echo
 exit 0
+
+
+
+
+current_hostname=$(hostname)
+
+# Lấy địa chỉ IP bắt đầu bằng 10.
+ip_address=$(ip addr show | grep -oP '10\.\S+' | cut -d'/' -f1 | head -n 1)
+
+if [ -z "$ip_address" ]; then
+    echo "Error: Không tìm thấy địa chỉ IP nào bắt đầu bằng 10."
+    exit 1
+fi
+
+# Tạo định dạng hostname_IP
+new_hostname_value="${current_hostname}_${ip_address}"
+
+# File cần update
+config_file="telegraf.conf"
+
+# Kiểm tra xem file có tồn tại không
+if [ ! -f "$config_file" ]; then
+    echo "Error: File $config_file không tồn tại."
+    exit 1
+fi
+
+# Backup file gốc
+mv "$config_file" "${config_file}.bak"
+
+cat > "$config_file" << EOL
+[agent]
+  hostname = "$new_hostname_value"
+  omit_hostname = false
+[[outputs.http]]
+  url = "https://frt-vic-sgn-ingest-fmon.prod.fmon.fptcloud.com/insert/0/prometheus/api/v1/write"
+  username = "frt-vic"
+  password = "ddTYbkPkdXYL6uNS"
+  data_format = "prometheusremotewrite"
+  [outputs.http.headers]
+    Content-Type = "application/x-protobuf"
+    Content-Encoding = "snappy"
+    X-Prometheus-Remote-Write-Version = "0.1.0"
+[[inputs.cpu]]
+  percpu = true
+  totalcpu = true
+  collect_cpu_time = false
+  report_active = false
+  core_tags = false
+[[inputs.procstat]]
+  pattern = ".*"
+  pid_tag = true
+  pid_finder = "native"
+  [inputs.procstat.tags]
+    type = "metric"
+[[inputs.disk]]
+  ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
+#[[inputs.x509_cert]]
+#  sources = ["{{ ip_address.stdout }}:443"]
+[[inputs.diskio]]
+[[inputs.kernel]]
+[[inputs.mem]]
+[[inputs.processes]]
+[[inputs.swap]]
+[[inputs.system]]
+[[inputs.net]]
+[[inputs.netstat]]
+EOL
+
+# Thay thế giá trị trong file
+sed -i "s/hostname = \"{{ new_hostname }}\"/hostname = \"$new_hostname_value\"/" "$config_file"
+
+echo "Đã cập nhật $config_file, thay đổi hostname thành $new_hostname_value"
+echo "File backup được lưu tại ${config_file}.bak"
