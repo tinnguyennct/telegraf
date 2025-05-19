@@ -216,8 +216,6 @@ tput setaf 2
 echo "[ SUCCESS ]"
 tput sgr0
 echo "Telegraf has been installed successfully."
-echo
-exit 0
 
 
 
