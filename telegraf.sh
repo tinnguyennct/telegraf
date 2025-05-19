@@ -289,3 +289,4 @@ sed -i "s/hostname = \"{{ new_hostname }}\"/hostname = \"$new_hostname_value\"/"
 
 echo "Đã cập nhật $config_file, thay đổi hostname thành $new_hostname_value"
 echo "File backup được lưu tại ${config_file}.bak"
+systemctl restart telegraf
