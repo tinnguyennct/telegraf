@@ -234,7 +234,7 @@ fi
 new_hostname_value="${current_hostname}_${ip_address}"
 
 # File cần update
-config_file="telegraf.conf"
+config_file="/etc/telegraf/telegraf.conf"
 
 # Kiểm tra xem file có tồn tại không
 if [ ! -f "$config_file" ]; then
